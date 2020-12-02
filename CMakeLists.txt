@@ -43,9 +43,6 @@ endif()
 ##
 ## Library:
 ##
-set(CMAKE_CXX_FLAGS, "-g -O0 -Wall -fprofile-arcs -ftest-coverage --whole-archive -lgcov")
-set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
-
 set(SRCS
     src/Options.cpp
     src/Binasc.cpp

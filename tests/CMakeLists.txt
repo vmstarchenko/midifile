@@ -3,9 +3,6 @@ set(Boost_ADDITIONAL_VERSIONS "1.34" "1.34.0")
 find_package(Boost 1.34 REQUIRED COMPONENTS unit_test_framework)
 
 
-# set(CMAKE_CXX_FLAGS, "-g -O0 -Wall -fprofile-arcs -ftest-coverage --whole-archive -lgcov --coverage")
-# set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
-
 add_executable(testlib testlib.cpp)
 target_include_directories(
   testlib
@@ -35,6 +32,13 @@ add_test(NAME test1 COMMAND testlib)
 set(GCOV gcov)
 set(LCOV ~/tmp/lcov/bin/lcov)
 set(GENHTML ~/tmp/lcov/bin/genhtml)
+if (DEFINED ENV{LCOV})
+    set(LCOV $ENV{LCOV})
+endif()
+if (DEFINED ENV{GENHTML})
+    set(GENHTML $ENV{GENHTML})
+endif()
+
 
 add_custom_target(testlibrun COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS testlib)
 add_custom_target(
