@@ -2,6 +2,10 @@ set(Boost_ADDITIONAL_VERSIONS "1.34" "1.34.0")
 
 find_package(Boost 1.34 REQUIRED COMPONENTS unit_test_framework)
 
+
+# set(CMAKE_CXX_FLAGS, "-g -O0 -Wall -fprofile-arcs -ftest-coverage --whole-archive -lgcov --coverage")
+# set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
+
 add_executable(testlib testlib.cpp)
 target_include_directories(
   testlib
@@ -28,7 +32,19 @@ target_compile_options(testlib
 )
 add_test(NAME test1 COMMAND testlib)
 
-# add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS testlib)
+set(GCOV gcov)
+set(LCOV ~/tmp/lcov/bin/lcov)
+set(GENHTML ~/tmp/lcov/bin/genhtml)
+
+add_custom_target(testlibrun COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS testlib)
+add_custom_target(
+    coverage
+  COMMAND
+    ${GCOV} ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/testlib.dir/testlib.gcno && 
+    ${LCOV} --capture --directory ${CMAKE_BINARY_DIR}/.. --output-file ${CMAKE_BINARY_DIR}/LCOV_OUTPUT.info --include */midifile/* &&
+    ${GENHTML} ${CMAKE_BINARY_DIR}/LCOV_OUTPUT.info --output-directory ${CMAKE_BINARY_DIR}/CODE_COVERAGE
+  DEPENDS testlibrun 
+)
 
 file(
   COPY
