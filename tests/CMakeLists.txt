@@ -27,7 +27,9 @@ target_compile_options(testlib
     "-fprofile-arcs"
     "-ftest-coverage"
 )
-add_test(NAME test1 COMMAND testlib)
+add_test(NAME test_read COMMAND testlib)
+add_test(NAME test_write COMMAND testlib)
+add_test(NAME test_functions COMMAND testlib)
 
 set(GCOV gcov)
 set(LCOV ~/tmp/lcov/bin/lcov)
@@ -50,8 +52,22 @@ add_custom_target(
   DEPENDS testlibrun 
 )
 
+add_custom_target(
+    save_out
+  COMMAND
+    cp -r ${CMAKE_CURRENT_BINARY_DIR}/out ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 file(
   COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/files
   DESTINATION
     ${CMAKE_CURRENT_BINARY_DIR})
+
+file(
+  COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/out
+  DESTINATION
+    ${CMAKE_CURRENT_BINARY_DIR})
+ 
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/out)
