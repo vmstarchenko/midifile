@@ -40,10 +40,10 @@ def main():
     print('Write test_outs.hpp')
     with open(os.path.join(cur_dir, 'test_outs.hpp'), 'w') as f:
         f.write(TEMPLATE % {
-            'values': '\n'.join(values.values()),
+            'values': '\n'.join(sorted(values.values())),
             'names': '\n    '.join(
                 '{"%(name)s", %(name)s},' % {'name': name}
-                for name in values
+                for name in sorted(values)
             )
         })
     

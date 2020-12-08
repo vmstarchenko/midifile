@@ -28,6 +28,27 @@ void setTempo(MidiFile& midifile, int index, double& tempo) {
    }
 }
 
+stringstream& convertMidiFileToText2(const MidiFile& m, stringstream& out) {
+   MidiFile midifile = m;
+   for (int i = 0; i < midifile.size(); i++) {
+       out << "Track:" << i << endl;
+       const auto& track = midifile[i];
+       for (int j = 0; j < track.size(); j++) {
+	  const auto& msg = track[j];
+	  if (msg.size()) {
+              out << int(msg[0]);
+	  }
+	  for (int k = 1; k < msg.size(); ++k) {
+              out << ":" << int(msg[k]);
+	  }
+	  out << endl;
+      }
+   }
+
+   return out;
+
+}
+
 
 
 stringstream& convertMidiFileToText(const MidiFile& m, stringstream& out) {
@@ -82,16 +103,21 @@ stringstream& convertMidiFileToText(const MidiFile& m, stringstream& out) {
 string dump(const MidiFile& midifile) {
     stringstream out;
     MidiFile m = midifile;
-    m.writeBinascWithComments(out);
-    // convertMidiFileToText(midifile, out);
+    // m.writeBinascWithComments(out);
+    convertMidiFileToText2(midifile, out);
     return out.str();
 }
 
+string read(const string& path) {
+    std::ifstream t(path);
+    BOOST_CHECK(t.is_open());
+    std::stringstream buffer;
+    buffer << t.rdbuf();
+    return buffer.str();
+}
 
 
-
-void check(const MidiFile& m, string filename, bool save=SAVE) {
-    string data = dump(m);
+void check(const string& data, string filename, bool save=SAVE) {
     if (save) {
         filename = "out/" + filename;
         ofstream f;
@@ -104,6 +130,10 @@ void check(const MidiFile& m, string filename, bool save=SAVE) {
        	BOOST_CHECK_EQUAL(TEST_OUTS.at(filename), data);
     }
 };
+
+void check(const MidiFile& m, string filename, bool save=SAVE) {
+    check(dump(m), filename, save);
+}
 
 
 BOOST_AUTO_TEST_CASE(test_read) {
@@ -159,48 +189,48 @@ MidiFile load(const vector<vector<int>>& messages) {
    return midifile;
 }
 
+const MidiFile m1 = load({
+    // start, end, key, volume, track, channel, instrument
+    {0, 1, 60, 100, 0, 0, 1},
+    {1, 1, 61, 80, 0, 1, 2}
+});
+
 
 BOOST_AUTO_TEST_CASE(test_functions) {
     // test existed file
-    MidiFile m1 = load({
-       // start, end, key, volume, track, channel, instrument
-       {0, 1, 60, 100, 0, 0, 1},
-       {1, 1, 61, 80, 0, 1, 2}
-    });
     BOOST_CHECK(m1.status());
-    const MidiFile m2 = m1;
-
     check(m1, "test_functions_m1");
 
     BOOST_CHECK_EQUAL(m1.size(), 1);
 
-    MidiEventList& l1 = m1[0];
-    const MidiEventList& l2 = m2[0];
+    MidiFile m2 = m1;
+    const MidiEventList& l1 = m1[0];
+    MidiEventList& l2 = m2[0];
 
-    m1.removeEmpties();
+    auto t1 = m1;
+    t1[0][2].resize(0);
+    t1.removeEmpties();
+    check(t1, "test_functions_removeEmpties");
 }
 
 BOOST_AUTO_TEST_CASE(test_write) {
-   /*
-   BOOST_TEST(dump(load({
-       {0, 1, 60, 100},
-       {1, 1, 60, 100}
-   })) == (
-       "note 0 1 60 100\n"
-       "note 1 1 60 100\n"
-   ));
-   */
-
+   auto m2 = m1;
 
    /*
-   midifile.write("files/test_write_1");
-   midifile.write("files/missed/test_write_2");
-   midifile.writeHex("files/test_write_3");
-   midifile.writeHex("files/missed/test_write_4");
-   midifile.writeBinasc("files/test_write_5");
-   midifile.writeBinasc("files/missed/test_write_6");
-   midifile.writeBinascWithComments("files/test_write_7");
-   midifile.writeBinascWithComments("files/missed/test_write_8");
+   m2.write("files/missed/test_write");
+   m2.write("files/test_write");
+   check(read("files/test_write"), "test_write");
    */
 
+   m2.writeHex("files/missed/test_writeHex");
+   m2.writeHex("files/test_writeHex");
+   check(read("files/test_writeHex"), "test_writeHex");
+
+   m2.writeBinasc("files/missed/test_writeBinasc");
+   m2.writeBinasc("files/test_writeBinasc");
+   check(read("files/test_writeBinasc"), "test_writeBinasc");
+
+   m2.writeBinascWithComments("files/missed/test_writeBinascWithComments");
+   m2.writeBinascWithComments("files/test_writeBinascWithComments");
+   check(read("files/test_writeBinascWithComments"), "test_writeBinascWithComments");
 }
