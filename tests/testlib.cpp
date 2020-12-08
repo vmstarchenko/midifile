@@ -5,7 +5,7 @@
 #include <iostream>
 #include "test_outs.hpp"
 
-bool SAVE = true;
+bool SAVE = false;
 
 using namespace std;
 using namespace smf;
@@ -136,7 +136,9 @@ void check(const MidiFile& m, string filename, bool save=SAVE) {
 }
 
 
-BOOST_AUTO_TEST_CASE(test_read) {
+BOOST_AUTO_TEST_SUITE( test_read_s )
+
+BOOST_AUTO_TEST_CASE(test_read, * boost::unit_test::timeout(2)) {
     // test existed file
     MidiFile m1("files/chor001.mid");
     BOOST_CHECK(m1.status());
@@ -154,10 +156,41 @@ BOOST_AUTO_TEST_CASE(test_read) {
     ifstream f4;
     f4.open ("files/chor001.mid", ifstream::in);
     MidiFile m4(f4);
+
+    {
+    // test empty file
+    MidiFile t;
+    stringstream ss;
+    t.read(ss);
+    BOOST_CHECK(!t.status());
+    }
+
+    {
+    // test broken file
+    MidiFile t;
+    stringstream ss;
+    for (int i = 0; i < 10000; ++i) {
+        ss << '\0';
+    }
+    // t.read(ss);
+    // BOOST_CHECK(!t.status());
+    }
+
 }
+
+BOOST_AUTO_TEST_SUITE_END()
 
 MidiFile load(const vector<vector<int>>& messages) {
    MidiFile midifile;
+   int tracks = 0;
+   for (auto& msg : messages) {
+       if (msg.size() > 4 && msg[4] > tracks) {
+	   tracks = msg[4];
+       }
+   }
+   if (tracks) {
+       midifile.addTracks(midifile.size() - tracks + 1);
+   }
 
    int tpq = midifile.getTPQ();
    for (auto& msg : messages) {
@@ -189,12 +222,21 @@ MidiFile load(const vector<vector<int>>& messages) {
    return midifile;
 }
 
-const MidiFile m1 = load({
+const static MidiFile m1 = load({
     // start, end, key, volume, track, channel, instrument
     {0, 1, 60, 100, 0, 0, 1},
     {1, 1, 61, 80, 0, 1, 2}
 });
 
+
+const static MidiFile m2 = load({
+    // start, end, key, volume, track, channel, instrument
+    {0, 1, 60, 100, 0, 0, 1},
+    {1, 1, 61, 80, 1, 1, 2}
+});
+
+
+BOOST_AUTO_TEST_SUITE( test_functions_s )
 
 BOOST_AUTO_TEST_CASE(test_functions) {
     // test existed file
@@ -203,25 +245,87 @@ BOOST_AUTO_TEST_CASE(test_functions) {
 
     BOOST_CHECK_EQUAL(m1.size(), 1);
 
-    MidiFile m2 = m1;
+    /*
+    MidiFile t0 = m0;
     const MidiEventList& l1 = m1[0];
     MidiEventList& l2 = m2[0];
+    */
 
-    auto t1 = m1;
-    t1[0][2].resize(0);
-    t1.removeEmpties();
-    check(t1, "test_functions_removeEmpties");
+    {
+    auto t = m1;
+    t[0][2].resize(0);
+    t.removeEmpties();
+    check(t, "test_functions_removeEmpties");
+    }
+
+    {
+    auto t = m2;
+    t.joinTracks();
+    BOOST_CHECK_EQUAL(t.getTrackCount(), 1);
+    BOOST_CHECK(t.hasJoinedTracks());
+    check(t, "test_functions_joinTracks");
+
+    t.joinTracks();
+    BOOST_CHECK_EQUAL(t.getTrackCount(), 1);
+    BOOST_CHECK(t.hasJoinedTracks());
+    check(t, "test_functions_joinTracks");
+    }
+
+    {
+    auto t = m1;
+    BOOST_CHECK(!t.hasJoinedTracks());
+    t.joinTracks();
+    BOOST_CHECK_EQUAL(t.getTrackCount(), 1);
+    BOOST_CHECK(t.hasJoinedTracks());
+    check(t, "test_functions_joinTracks_single_track");
+    }
+
+    {
+    auto t = m2;
+    t.joinTracks();
+    BOOST_CHECK(t.hasJoinedTracks());
+    BOOST_CHECK(!t.hasSplitTracks());
+    t.splitTracksByChannel();
+    BOOST_CHECK(!t.hasJoinedTracks());
+    BOOST_CHECK(t.hasSplitTracks());
+    check(t, "test_functions_splitTracksByChannel");
+    BOOST_CHECK_EQUAL(t.getTrackCount(), 3);
+    }
+
+    {
+    auto t = m1;
+    BOOST_CHECK_EQUAL(t.getFileDurationInTicks(), 60);
+    BOOST_CHECK_EQUAL(t.getFileDurationInQuarters(), 0.5);
+    BOOST_CHECK_EQUAL(t.getFileDurationInSeconds(), 0.25);
+    BOOST_CHECK_EQUAL(t.getEventCount(0), 6);
+    }
+
+    {
+    auto t = m1;
+    t.setTPQ(60);
+    BOOST_CHECK_EQUAL(t.getFileDurationInQuarters(), 1);
+    BOOST_CHECK_EQUAL(t.getFileDurationInSeconds(), 0.5);
+    }
+
+
+
 }
 
-BOOST_AUTO_TEST_CASE(test_write) {
-   auto m2 = m1;
+BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE( test_write_s )
 
+BOOST_AUTO_TEST_CASE(test_write) {
    /*
-   m2.write("files/missed/test_write");
-   m2.write("files/test_write");
+   {
+   auto t = m1;
+
+   t.write("files/missed/test_write");
+   t.write("files/test_write");
    check(read("files/test_write"), "test_write");
+   }
    */
 
+   auto m2 = m1;
    m2.writeHex("files/missed/test_writeHex");
    m2.writeHex("files/test_writeHex");
    check(read("files/test_writeHex"), "test_writeHex");
@@ -234,3 +338,4 @@ BOOST_AUTO_TEST_CASE(test_write) {
    m2.writeBinascWithComments("files/test_writeBinascWithComments");
    check(read("files/test_writeBinascWithComments"), "test_writeBinascWithComments");
 }
+BOOST_AUTO_TEST_SUITE_END()

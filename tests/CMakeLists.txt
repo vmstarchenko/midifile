@@ -30,9 +30,8 @@ target_compile_options(testlib
     "-fprofile-arcs"
     "-ftest-coverage"
 )
-add_test(NAME test_read COMMAND testlib)
-add_test(NAME test_write COMMAND testlib)
-add_test(NAME test_functions COMMAND testlib)
+
+add_test(NAME test COMMAND testlib)
 
 set(GCOV gcov)
 set(LCOV ~/tmp/lcov/bin/lcov)

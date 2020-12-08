@@ -1,6 +1,28 @@
 #include <map>
 #include <string>
 
+std::string test_functions_joinTracks = (
+    "Track:0\n"
+   "192:1\n"
+   "192:1\n"
+   "144:60:100\n"
+   "144:60:0\n"
+   "145:61:80\n"
+   "145:61:0\n"
+);
+
+
+std::string test_functions_joinTracks_single_track = (
+    "Track:0\n"
+   "192:1\n"
+   "192:1\n"
+   "144:60:100\n"
+   "144:60:0\n"
+   "145:61:80\n"
+   "145:61:0\n"
+);
+
+
 std::string test_functions_m1 = (
     "Track:0\n"
    "192:1\n"
@@ -17,6 +39,19 @@ std::string test_functions_removeEmpties = (
    "192:1\n"
    "192:1\n"
    "144:60:0\n"
+   "145:61:80\n"
+   "145:61:0\n"
+);
+
+
+std::string test_functions_splitTracksByChannel = (
+    "Track:0\n"
+   "Track:1\n"
+   "192:1\n"
+   "192:1\n"
+   "144:60:100\n"
+   "144:60:0\n"
+   "Track:2\n"
    "145:61:80\n"
    "145:61:0\n"
 );
@@ -702,8 +737,11 @@ std::string test_writeHex = (
 
 
 std::map<std::string, std::string> TEST_OUTS = {
+    {"test_functions_joinTracks", test_functions_joinTracks},
+    {"test_functions_joinTracks_single_track", test_functions_joinTracks_single_track},
     {"test_functions_m1", test_functions_m1},
     {"test_functions_removeEmpties", test_functions_removeEmpties},
+    {"test_functions_splitTracksByChannel", test_functions_splitTracksByChannel},
     {"test_read_1", test_read_1},
     {"test_writeBinasc", test_writeBinasc},
     {"test_writeBinascWithComments", test_writeBinascWithComments},
