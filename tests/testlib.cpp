@@ -3,11 +3,12 @@
 #include "MidiFile.h"
 #include <random>
 #include <iostream>
+#include "test_outs.hpp"
+
+bool SAVE = true;
 
 using namespace std;
 using namespace smf;
-
-
 void setTempo(MidiFile& midifile, int index, double& tempo) {
    static int count = 1;
 
@@ -28,36 +29,9 @@ void setTempo(MidiFile& midifile, int index, double& tempo) {
 }
 
 
-class TestOut : public stringstream {
-public:
-    void check(string filename, bool clear=true, bool save=true) {
-	filename = "out/" + filename;
-        if (save) {
-            ofstream f;
-	    cerr << "Write: " << filename << endl;
-            f.open(filename, ifstream::out);
-	    BOOST_CHECK(f.is_open());
-            f << rdbuf();
-	    f.close();
-        } else {
-            ifstream f;
-            std::stringstream buffer;
-            f.open(filename, ifstream::in);
-	    BOOST_CHECK(f.is_open());
-            buffer << f.rdbuf();
-	    f.close();
-            BOOST_TEST(buffer.str() == str());
-        }
 
-        if (clear) {
-            str(string());
-        }
-
-    }
-};
-
-
-stringstream& convertMidiFileToText(MidiFile& midifile, stringstream& out) {
+stringstream& convertMidiFileToText(const MidiFile& m, stringstream& out) {
+   MidiFile midifile = m;
    midifile.absoluteTicks();
    midifile.joinTracks();
 
@@ -75,21 +49,19 @@ stringstream& convertMidiFileToText(MidiFile& midifile, stringstream& out) {
    int key = 0;
    int vel = 0;
 
-   for (i=0; i<midifile.getNumEvents(0); i++) {
+   for (i = 0; i < midifile.getNumEvents(0); i++) {
       int command = midifile[0][i][0] & 0xf0;
       if (command == 0x90 && midifile[0][i][2] != 0) {
-         // store note-on velocity and time
          key = midifile[0][i][1];
          vel = midifile[0][i][2];
          ontimes[key] = midifile[0][i].tick;
          onvelocities[key] = vel;
       } else if (command == 0x90 || command == 0x80) {
-         // note off command write to output
          key = midifile[0][i][1];
          offtime = midifile[0][i].tick;
-         out << "note\t" << ontimes[key]
-              << "\t" << offtime
-              << "\t" << key << "\t" << onvelocities[key] << endl;
+         out << "note " << ontimes[key]
+              << " " << offtime
+              << " " << key << " " << onvelocities[key] << endl;
          onvelocities[key] = -1;
          ontimes[key] = -1.0;
       }
@@ -105,17 +77,40 @@ stringstream& convertMidiFileToText(MidiFile& midifile, stringstream& out) {
 
 }
 
-TestOut& convertMidiFileToText(MidiFile& midifile, TestOut& out) {
-    convertMidiFileToText(midifile, (stringstream&) out);
-    return out;
+
+
+string dump(const MidiFile& midifile) {
+    stringstream out;
+    MidiFile m = midifile;
+    m.writeBinascWithComments(out);
+    // convertMidiFileToText(midifile, out);
+    return out.str();
 }
+
+
+
+
+void check(const MidiFile& m, string filename, bool save=SAVE) {
+    string data = dump(m);
+    if (save) {
+        filename = "out/" + filename;
+        ofstream f;
+        cerr << "Write: " << filename << endl;
+        f.open(filename, ifstream::out);
+        BOOST_CHECK(f.is_open());
+        f << data;
+        f.close();
+    } else {
+       	BOOST_CHECK_EQUAL(TEST_OUTS.at(filename), data);
+    }
+};
+
 
 BOOST_AUTO_TEST_CASE(test_read) {
     // test existed file
     MidiFile m1("files/chor001.mid");
     BOOST_CHECK(m1.status());
-    TestOut out;
-    convertMidiFileToText(m1, out).check("test_read_1");
+    check(m1, "test_read_1");
 
     // test missed file
     MidiFile m2;
@@ -131,58 +126,73 @@ BOOST_AUTO_TEST_CASE(test_read) {
     MidiFile m4(f4);
 }
 
-BOOST_AUTO_TEST_CASE(test_functions) {
-    // test existed file
-    MidiFile m1("files/chor001.mid");
-    const MidiFile m2("files/chor001.mid");
-
-    BOOST_CHECK(m1.status());
-    m1.size();
-    MidiEventList& l1 = m1[0];
-    const MidiEventList& l2 = m2[0];
-
-    m1.removeEmpties();
-    m1.markSequence();
-    m1.markSequence(0);
-    m1.markSequence(1000);
-    m1.clearSequence();
-    m1.clearSequence(0);
-    m1.clearSequence(1000);
-    m1.joinTracks();
-    m1.splitTracks();
-    m1.splitTracksByChannel();
-}
-
-MidiFile buildMidiFile(const vector<vector<int>>& messages) {
+MidiFile load(const vector<vector<int>>& messages) {
    MidiFile midifile;
-   int track   = 0;
-   int channel = 0;
-   int instr   = 1;
-   midifile.addTimbre(track, 0, channel, instr);
 
-   int tpq     = midifile.getTPQ();
-   int count   = 20;
+   int tpq = midifile.getTPQ();
    for (auto& msg : messages) {
-      int starttick = int(msg[0] * tpq);
-      cout << "TICKS" << starttick << endl;
-      int endtick   = starttick + int(msg[1] * tpq);
-      int key       = msg[2];
-      midifile.addNoteOn(track, starttick, channel, key, msg[3]);
-      midifile.addNoteOff(track, endtick,   channel, key);
+       // start, end, key, volume, track, channel, instrument
+       int volume = 100, track = 0, channel = 0, instr = 1;
+       midifile.addTimbre(track, 0, channel, instr);
+
+       int starttick = msg[0] * tpq / 4;
+       int endtick = starttick + msg[1] * tpq / 4;
+       int key = msg[2];
+       if (msg.size() > 3) {
+	   volume = msg[3];
+       }
+       if (msg.size() > 4) {
+	   track = msg[4];
+       }
+       if (msg.size() > 5) {
+	   channel = msg[5];
+       }
+       if (msg.size() > 6) {
+	   instr = msg[6];
+       }
+
+       midifile.addNoteOn(track, starttick, channel, key, volume);
+       midifile.addNoteOff(track, endtick, channel, key);
    }
    midifile.sortTracks();
 
    return midifile;
 }
 
+
+BOOST_AUTO_TEST_CASE(test_functions) {
+    // test existed file
+    MidiFile m1 = load({
+       // start, end, key, volume, track, channel, instrument
+       {0, 1, 60, 100, 0, 0, 1},
+       {1, 1, 61, 80, 0, 1, 2}
+    });
+    BOOST_CHECK(m1.status());
+    const MidiFile m2 = m1;
+
+    check(m1, "test_functions_m1");
+
+    BOOST_CHECK_EQUAL(m1.size(), 1);
+
+    MidiEventList& l1 = m1[0];
+    const MidiEventList& l2 = m2[0];
+
+    m1.removeEmpties();
+}
+
 BOOST_AUTO_TEST_CASE(test_write) {
-   MidiFile midifile = buildMidiFile({
-       {0, 1, 60, 100}
-   });
-   TestOut out;
-   convertMidiFileToText(midifile, out).check("test_write_1");
+   /*
+   BOOST_TEST(dump(load({
+       {0, 1, 60, 100},
+       {1, 1, 60, 100}
+   })) == (
+       "note 0 1 60 100\n"
+       "note 1 1 60 100\n"
+   ));
+   */
 
 
+   /*
    midifile.write("files/test_write_1");
    midifile.write("files/missed/test_write_2");
    midifile.writeHex("files/test_write_3");
@@ -191,5 +201,6 @@ BOOST_AUTO_TEST_CASE(test_write) {
    midifile.writeBinasc("files/missed/test_write_6");
    midifile.writeBinascWithComments("files/test_write_7");
    midifile.writeBinascWithComments("files/missed/test_write_8");
+   */
 
 }

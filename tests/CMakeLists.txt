@@ -3,7 +3,7 @@ set(Boost_ADDITIONAL_VERSIONS "1.34" "1.34.0")
 find_package(Boost 1.34 REQUIRED COMPONENTS unit_test_framework)
 
 
-add_executable(testlib testlib.cpp)
+add_executable(testlib testlib.cpp test_outs.hpp)
 target_include_directories(
   testlib
   PRIVATE
@@ -21,6 +21,9 @@ target_link_libraries(
     gcov
     midifile
 )
+target_compile_features(testlib PRIVATE cxx_std_17)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
+set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
 target_compile_options(testlib
   PUBLIC
     "-O0"
@@ -55,7 +58,7 @@ add_custom_target(
 add_custom_target(
     save_out
   COMMAND
-    cp -r ${CMAKE_CURRENT_BINARY_DIR}/out ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/save_out.py ${CMAKE_CURRENT_BINARY_DIR}/out ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 file(
@@ -64,10 +67,4 @@ file(
   DESTINATION
     ${CMAKE_CURRENT_BINARY_DIR})
 
-file(
-  COPY
-    ${CMAKE_CURRENT_SOURCE_DIR}/out
-  DESTINATION
-    ${CMAKE_CURRENT_BINARY_DIR})
- 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/out)
