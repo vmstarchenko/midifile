@@ -31,6 +31,9 @@ add_executable(todec todec.cpp)
 add_executable(tohex tohex.cpp)
 add_executable(type0 type0.cpp)
 add_executable(vlv vlv.cpp)
+# add_executable(midicheck midicheck.cpp)
+
+# target_compile_features(midicheck PRIVATE cxx_std_17)
 
 target_link_libraries(80off midifile)
 target_link_libraries(asciimidi midifile)
@@ -65,6 +68,12 @@ target_link_libraries(todec midifile)
 target_link_libraries(tohex midifile)
 target_link_libraries(type0 midifile)
 target_link_libraries(vlv midifile)
+# target_link_libraries(midicheck midifile tbb)
+
+# set(THREADS_PREFER_PTHREAD_FLAG ON)
+# find_package(Threads REQUIRED)
+# target_link_libraries(midicheck Threads::Threads)
+# TARGET_LINK_LIBRARIES(midicheck LINK_PUBLIC ${Boost_LIBRARIES} )
 
 if(HAVE_UNISTD_H AND HAVE_SYS_IO_H)
     add_executable(midi2beep midi2beep.cpp)

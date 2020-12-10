@@ -57,6 +57,17 @@ std::string test_functions_splitTracksByChannel = (
 );
 
 
+std::string test_readBinasc = (
+    "Track:0\n"
+   "192:1\n"
+   "192:1\n"
+   "144:60:100\n"
+   "144:60:0\n"
+   "145:61:80\n"
+   "145:61:0\n"
+);
+
+
 std::string test_read_1 = (
     "Track:0\n"
    "255:81:3:9:39:192\n"
@@ -742,6 +753,7 @@ std::map<std::string, std::string> TEST_OUTS = {
     {"test_functions_m1", test_functions_m1},
     {"test_functions_removeEmpties", test_functions_removeEmpties},
     {"test_functions_splitTracksByChannel", test_functions_splitTracksByChannel},
+    {"test_readBinasc", test_readBinasc},
     {"test_read_1", test_read_1},
     {"test_writeBinasc", test_writeBinasc},
     {"test_writeBinascWithComments", test_writeBinascWithComments},

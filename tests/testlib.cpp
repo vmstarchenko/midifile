@@ -172,8 +172,8 @@ BOOST_AUTO_TEST_CASE(test_read, * boost::unit_test::timeout(2)) {
     for (int i = 0; i < 10000; ++i) {
         ss << '\0';
     }
-    // t.read(ss);
-    // BOOST_CHECK(!t.status());
+    t.read(ss);
+    BOOST_CHECK(!t.status());
     }
 
 }
@@ -325,17 +325,27 @@ BOOST_AUTO_TEST_CASE(test_write) {
    }
    */
 
-   auto m2 = m1;
-   m2.writeHex("files/missed/test_writeHex");
-   m2.writeHex("files/test_writeHex");
+   {
+   auto t = m1;
+   t.writeHex("files/missed/test_writeHex");
+   t.writeHex("files/test_writeHex");
    check(read("files/test_writeHex"), "test_writeHex");
+   }
 
-   m2.writeBinasc("files/missed/test_writeBinasc");
-   m2.writeBinasc("files/test_writeBinasc");
+   {
+   auto t = m1;
+   t.writeBinasc("files/missed/test_writeBinasc");
+   t.writeBinasc("files/test_writeBinasc");
    check(read("files/test_writeBinasc"), "test_writeBinasc");
+   MidiFile t1("files/test_writeBinasc");
+   check(dump(t), "test_readBinasc");
+   }
 
-   m2.writeBinascWithComments("files/missed/test_writeBinascWithComments");
-   m2.writeBinascWithComments("files/test_writeBinascWithComments");
+   {
+   auto t = m1;
+   t.writeBinascWithComments("files/missed/test_writeBinascWithComments");
+   t.writeBinascWithComments("files/test_writeBinascWithComments");
    check(read("files/test_writeBinascWithComments"), "test_writeBinascWithComments");
+   }
 }
 BOOST_AUTO_TEST_SUITE_END()

@@ -267,7 +267,7 @@ int Binasc::writeToBinary(std::ostream& out, std::istream& input) {
 
 	input.getline(inputLine, 1024, '\n');
 	lineNum++;
-	while (!input.eof()) {
+	while (!input.eof() && !input.fail()) {
 		int status = processLine(out, inputLine, lineNum);
 		if (!status) {
 			return 0;
