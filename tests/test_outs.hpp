@@ -1,6 +1,18 @@
 #include <map>
 #include <string>
 
+std::string test_functions_addTempo = (
+    "Track:0\n"
+   "192:1\n"
+   "192:1\n"
+   "144:60:100\n"
+   "144:60:0\n"
+   "145:61:80\n"
+   "145:61:0\n"
+   "255:81:3:3:13:64\n"
+);
+
+
 std::string test_functions_joinTracks = (
     "Track:0\n"
    "192:1\n"
@@ -748,6 +760,7 @@ std::string test_writeHex = (
 
 
 std::map<std::string, std::string> TEST_OUTS = {
+    {"test_functions_addTempo", test_functions_addTempo},
     {"test_functions_joinTracks", test_functions_joinTracks},
     {"test_functions_joinTracks_single_track", test_functions_joinTracks_single_track},
     {"test_functions_m1", test_functions_m1},

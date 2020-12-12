@@ -307,8 +307,11 @@ BOOST_AUTO_TEST_CASE(test_functions) {
     BOOST_CHECK_EQUAL(t.getFileDurationInSeconds(), 0.5);
     }
 
-
-
+   {
+   auto t = m1;
+   t.addTempo(0, 2, 300);
+   check(t, "test_functions_addTempo");
+   }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -347,5 +350,6 @@ BOOST_AUTO_TEST_CASE(test_write) {
    t.writeBinascWithComments("files/test_writeBinascWithComments");
    check(read("files/test_writeBinascWithComments"), "test_writeBinascWithComments");
    }
+
 }
 BOOST_AUTO_TEST_SUITE_END()
