@@ -50,6 +50,7 @@ set(SRCS
     src/MidiEventList.cpp
     src/MidiFile.cpp
     src/MidiMessage.cpp
+    src/Logger.cpp
 )
 
 set(HDRS
@@ -59,6 +60,7 @@ set(HDRS
     include/MidiFile.h
     include/MidiMessage.h
     include/Options.h
+    include/Logger.h
 )
 
 add_library(midifile SHARED ${SRCS} ${HDRS})

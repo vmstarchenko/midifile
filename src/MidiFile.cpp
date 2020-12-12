@@ -14,6 +14,7 @@
 
 #include "MidiFile.h"
 #include "Binasc.h"
+#include "Logger.h"
 
 #include <string>
 #include <vector>
@@ -184,7 +185,7 @@ bool MidiFile::read(std::istream& input) {
 		binasc.writeToBinary(binarydata, input);
 		binarydata.seekg(0, std::ios_base::beg);
 		if (binarydata.peek() != 'M') {
-			std::cerr << "Bad MIDI data input" << std::endl;
+			*logError << "Bad MIDI data input" << std::endl;
 			m_rwstatus = false;
 			return m_rwstatus;
 		} else {
@@ -206,48 +207,48 @@ bool MidiFile::read(std::istream& input) {
 
 	character = input.get();
 	if (character == EOF) {
-		std::cerr << "In file " << filename << ": unexpected end of file." << std::endl;
-		std::cerr << "Expecting 'M' at first byte, but found nothing." << std::endl;
+		*logDebug << "In file " << filename << ": unexpected end of file." << std::endl;
+		*logDebug << "Expecting 'M' at first byte, but found nothing." << std::endl;
 		m_rwstatus = false; return m_rwstatus;
 	} else if (character != 'M') {
-		std::cerr << "File " << filename << " is not a MIDI file" << std::endl;
-		std::cerr << "Expecting 'M' at first byte but got '"
+		*logDebug << "File " << filename << " is not a MIDI file" << std::endl;
+		*logDebug << "Expecting 'M' at first byte but got '"
 		     << (char)character << "'" << std::endl;
 		m_rwstatus = false; return m_rwstatus;
 	}
 
 	character = input.get();
 	if (character == EOF) {
-		std::cerr << "In file " << filename << ": unexpected end of file." << std::endl;
-		std::cerr << "Expecting 'T' at second byte, but found nothing." << std::endl;
+		*logDebug << "In file " << filename << ": unexpected end of file." << std::endl;
+		*logDebug << "Expecting 'T' at second byte, but found nothing." << std::endl;
 		m_rwstatus = false; return m_rwstatus;
 	} else if (character != 'T') {
-		std::cerr << "File " << filename << " is not a MIDI file" << std::endl;
-		std::cerr << "Expecting 'T' at second byte but got '"
+		*logDebug << "File " << filename << " is not a MIDI file" << std::endl;
+		*logDebug << "Expecting 'T' at second byte but got '"
 		     << (char)character << "'" << std::endl;
 		m_rwstatus = false; return m_rwstatus;
 	}
 
 	character = input.get();
 	if (character == EOF) {
-		std::cerr << "In file " << filename << ": unexpected end of file." << std::endl;
-		std::cerr << "Expecting 'h' at third byte, but found nothing." << std::endl;
+		*logDebug << "In file " << filename << ": unexpected end of file." << std::endl;
+		*logDebug << "Expecting 'h' at third byte, but found nothing." << std::endl;
 		m_rwstatus = false; return m_rwstatus;
 	} else if (character != 'h') {
-		std::cerr << "File " << filename << " is not a MIDI file" << std::endl;
-		std::cerr << "Expecting 'h' at third byte but got '"
+		*logDebug << "File " << filename << " is not a MIDI file" << std::endl;
+		*logDebug << "Expecting 'h' at third byte but got '"
 		     << (char)character << "'" << std::endl;
 		m_rwstatus = false; return m_rwstatus;
 	}
 
 	character = input.get();
 	if (character == EOF) {
-		std::cerr << "In file " << filename << ": unexpected end of file." << std::endl;
-		std::cerr << "Expecting 'd' at fourth byte, but found nothing." << std::endl;
+		*logDebug << "In file " << filename << ": unexpected end of file." << std::endl;
+		*logDebug << "Expecting 'd' at fourth byte, but found nothing." << std::endl;
 		m_rwstatus = false; return m_rwstatus;
 	} else if (character != 'd') {
-		std::cerr << "File " << filename << " is not a MIDI file" << std::endl;
-		std::cerr << "Expecting 'd' at fourth byte but got '"
+		*logDebug << "File " << filename << " is not a MIDI file" << std::endl;
+		*logDebug << "Expecting 'd' at fourth byte but got '"
 		     << (char)character << "'" << std::endl;
 		m_rwstatus = false; return m_rwstatus;
 	}
@@ -255,9 +256,9 @@ bool MidiFile::read(std::istream& input) {
 	// read header size (allow larger header size?)
 	longdata = readLittleEndian4Bytes(input);
 	if (longdata != 6) {
-		std::cerr << "File " << filename
+		*logDebug << "File " << filename
 		     << " is not a MIDI 1.0 Standard MIDI file." << std::endl;
-		std::cerr << "The header size is " << longdata << " bytes." << std::endl;
+		*logDebug << "The header size is " << longdata << " bytes." << std::endl;
 		m_rwstatus = false; return m_rwstatus;
 	}
 
@@ -275,7 +276,7 @@ bool MidiFile::read(std::istream& input) {
 			// Type-2 MIDI files should probably be allowed as well,
 			// but I have never seen one in the wild to test with.
 		default:
-			std::cerr << "Error: cannot handle a type-" << shortdata
+			*logDebug << "Error: cannot handle a type-" << shortdata
 			     << " MIDI file" << std::endl;
 			m_rwstatus = false; return m_rwstatus;
 	}
@@ -284,8 +285,8 @@ bool MidiFile::read(std::istream& input) {
 	int tracks;
 	shortdata = readLittleEndian2Bytes(input);
 	if (type == 0 && shortdata != 1) {
-		std::cerr << "Error: Type 0 MIDI file can only contain one track" << std::endl;
-		std::cerr << "Instead track count is: " << shortdata << std::endl;
+		*logDebug << "Error: Type 0 MIDI file can only contain one track" << std::endl;
+		*logDebug << "Instead track count is: " << shortdata << std::endl;
 		m_rwstatus = false; return m_rwstatus;
 	} else {
 		tracks = shortdata;
@@ -312,8 +313,8 @@ bool MidiFile::read(std::istream& input) {
 			case 29:  framespersecond = 29; break;  // really 29.97 for color television
 			case 30:  framespersecond = 30; break;
 			default:
-					std::cerr << "Warning: unknown FPS: " << framespersecond << std::endl;
-					std::cerr << "Using non-standard FPS: " << framespersecond << std::endl;
+					*logDebug << "Warning: unknown FPS: " << framespersecond << std::endl;
+					*logDebug << "Using non-standard FPS: " << framespersecond << std::endl;
 		}
 		m_ticksPerQuarterNote = framespersecond * subframes;
 
@@ -345,52 +346,52 @@ bool MidiFile::read(std::istream& input) {
 
 		character = input.get();
 		if (character == EOF) {
-			std::cerr << "In file " << filename << ": unexpected end of file." << std::endl;
-			std::cerr << "Expecting 'M' at first byte in track, but found nothing."
+			*logDebug << "In file " << filename << ": unexpected end of file." << std::endl;
+			*logDebug << "Expecting 'M' at first byte in track, but found nothing."
 			     << std::endl;
 			m_rwstatus = false; return m_rwstatus;
 		} else if (character != 'M') {
-			std::cerr << "File " << filename << " is not a MIDI file" << std::endl;
-			std::cerr << "Expecting 'M' at first byte in track but got '"
+			*logDebug << "File " << filename << " is not a MIDI file" << std::endl;
+			*logDebug << "Expecting 'M' at first byte in track but got '"
 			     << (char)character << "'" << std::endl;
 			m_rwstatus = false; return m_rwstatus;
 		}
 
 		character = input.get();
 		if (character == EOF) {
-			std::cerr << "In file " << filename << ": unexpected end of file." << std::endl;
-			std::cerr << "Expecting 'T' at second byte in track, but found nothing."
+			*logDebug << "In file " << filename << ": unexpected end of file." << std::endl;
+			*logDebug << "Expecting 'T' at second byte in track, but found nothing."
 			     << std::endl;
 			m_rwstatus = false; return m_rwstatus;
 		} else if (character != 'T') {
-			std::cerr << "File " << filename << " is not a MIDI file" << std::endl;
-			std::cerr << "Expecting 'T' at second byte in track but got '"
+			*logDebug << "File " << filename << " is not a MIDI file" << std::endl;
+			*logDebug << "Expecting 'T' at second byte in track but got '"
 			     << (char)character << "'" << std::endl;
 			m_rwstatus = false; return m_rwstatus;
 		}
 
 		character = input.get();
 		if (character == EOF) {
-			std::cerr << "In file " << filename << ": unexpected end of file." << std::endl;
-			std::cerr << "Expecting 'r' at third byte in track, but found nothing."
+			*logDebug << "In file " << filename << ": unexpected end of file." << std::endl;
+			*logDebug << "Expecting 'r' at third byte in track, but found nothing."
 			     << std::endl;
 			m_rwstatus = false; return m_rwstatus;
 		} else if (character != 'r') {
-			std::cerr << "File " << filename << " is not a MIDI file" << std::endl;
-			std::cerr << "Expecting 'r' at third byte in track but got '"
+			*logDebug << "File " << filename << " is not a MIDI file" << std::endl;
+			*logDebug << "Expecting 'r' at third byte in track but got '"
 			     << (char)character << "'" << std::endl;
 			m_rwstatus = false; return m_rwstatus;
 		}
 
 		character = input.get();
 		if (character == EOF) {
-			std::cerr << "In file " << filename << ": unexpected end of file." << std::endl;
-			std::cerr << "Expecting 'k' at fourth byte in track, but found nothing."
+			*logDebug << "In file " << filename << ": unexpected end of file." << std::endl;
+			*logDebug << "Expecting 'k' at fourth byte in track, but found nothing."
 			     << std::endl;
 			m_rwstatus = false; return m_rwstatus;
 		} else if (character != 'k') {
-			std::cerr << "File " << filename << " is not a MIDI file" << std::endl;
-			std::cerr << "Expecting 'k' at fourth byte in track but got '"
+			*logDebug << "File " << filename << " is not a MIDI file" << std::endl;
+			*logDebug << "Expecting 'k' at fourth byte in track but got '"
 			     << (char)character << "'" << std::endl;
 			m_rwstatus = false; return m_rwstatus;
 		}
@@ -469,7 +470,7 @@ bool MidiFile::write(const std::string& filename) {
 	std::fstream output(filename.c_str(), std::ios::binary | std::ios::out);
 
 	if (!output.is_open()) {
-		std::cerr << "Error: could not write: " << filename << std::endl;
+		*logDebug << "Error: could not write: " << filename << std::endl;
 		return false;
 	}
 	m_rwstatus = write(output);
@@ -602,7 +603,7 @@ bool MidiFile::write(std::ostream& out) {
 bool MidiFile::writeHex(const std::string& filename, int width) {
 	std::fstream output(filename.c_str(), std::ios::out);
 	if (!output.is_open()) {
-		std::cerr << "Error: could not write: " << filename << std::endl;
+		*logDebug << "Error: could not write: " << filename << std::endl;
 		return false;
 	}
 	m_rwstatus = writeHex(output, width);
@@ -653,7 +654,7 @@ bool MidiFile::writeBinasc(const std::string& filename) {
 	std::fstream output(filename.c_str(), std::ios::out);
 
 	if (!output.is_open()) {
-		std::cerr << "Error: could not write: " << filename << std::endl;
+		*logDebug << "Error: could not write: " << filename << std::endl;
 		return false;
 	}
 	m_rwstatus = writeBinasc(output);
@@ -692,7 +693,7 @@ bool MidiFile::writeBinascWithComments(const std::string& filename) {
 	std::fstream output(filename.c_str(), std::ios::out);
 
 	if (!output.is_open()) {
-		std::cerr << "Error: could not write: " << filename << std::endl;
+		*logDebug << "Error: could not write: " << filename << std::endl;
 		return 0;
 	}
 	m_rwstatus = writeBinascWithComments(output);
@@ -821,7 +822,7 @@ void MidiFile::markSequence(int track, int sequence) {
 	if ((track >= 0) && (track < getTrackCount())) {
 		operator[](track).markSequence(sequence);
 	} else {
-		std::cerr << "Warning: track " << track << " does not exist." << std::endl;
+		*logDebug << "Warning: track " << track << " does not exist." << std::endl;
 	}
 }
 
@@ -846,7 +847,7 @@ void MidiFile::clearSequence(int track) {
 	if ((track >= 0) && (track < getTrackCount())) {
 		operator[](track).clearSequence();
 	} else {
-		std::cerr << "Warning: track " << track << " does not exist." << std::endl;
+		*logDebug << "Warning: track " << track << " does not exist." << std::endl;
 	}
 }
 
@@ -1130,7 +1131,7 @@ void MidiFile::makeDeltaTicks(void) {
 			temp = (*m_events[i])[j].tick;
 			int deltatick = temp - timedata[i];
 			if (deltatick < 0) {
-				std::cerr << "Error: negative delta tick value: " << deltatick << std::endl
+				*logDebug << "Error: negative delta tick value: " << deltatick << std::endl
 				     << "Timestamps must be sorted first"
 				     << " (use MidiFile::sortTracks() before writing)." << std::endl;
 			}
@@ -1760,7 +1761,7 @@ int MidiFile::makeVLV(uchar *buffer, int number) {
 	unsigned long value = (unsigned long)number;
 
 	if (value >= (1 << 28)) {
-		std::cerr << "Error: Meta-message size too large to handle" << std::endl;
+		*logError << "Error: Meta-message size too large to handle" << std::endl;
 		buffer[0] = 0;
 		buffer[1] = 0;
 		buffer[2] = 0;
@@ -1958,8 +1959,8 @@ void MidiFile::setPitchBendRange(int aTrack, int aTick, int aChannel, double ran
 		range = -range;
 	}
 	if (range > 24.0) {
-		std::cerr << "Warning: pitch bend range is too large: " << range << std::endl;
-		std::cerr << "Setting to 24." << std::endl;
+		*logDebug << "Warning: pitch bend range is too large: " << range << std::endl;
+		*logDebug << "Setting to 24." << std::endl;
 		range = 24.0;
 	}
 	int irange = int(range);
@@ -2306,7 +2307,7 @@ void MidiFile::sortTrack(int track) {
 	if ((track >= 0) && (track < getTrackCount())) {
 		m_events.at(track)->sort();
 	} else {
-		std::cerr << "Warning: track " << track << " does not exist." << std::endl;
+		*logDebug << "Warning: track " << track << " does not exist." << std::endl;
 	}
 }
 
@@ -2323,7 +2324,7 @@ void MidiFile::sortTracks(void) {
 			m_events.at(i)->sort();
 		}
 	} else {
-		std::cerr << "Warning: Sorting only allowed in absolute tick mode.";
+		*logDebug << "Warning: Sorting only allowed in absolute tick mode.";
 	}
 }
 
@@ -2613,7 +2614,7 @@ int MidiFile::extractMidiData(std::istream& input, std::vector<uchar>& array,
 
 	character = input.get();
 	if (character == EOF) {
-		std::cerr << "Error: unexpected end of file." << std::endl;
+		*logDebug << "Error: unexpected end of file." << std::endl;
 		return 0;
 	} else {
 		byte = (uchar)character;
@@ -2622,13 +2623,13 @@ int MidiFile::extractMidiData(std::istream& input, std::vector<uchar>& array,
 	if (byte < 0x80) {
 		runningQ = 1;
 		if (runningCommand == 0) {
-			std::cerr << "Error: running command with no previous command" << std::endl;
+			*logDebug << "Error: running command with no previous command" << std::endl;
 			return 0;
 		}
 		if (runningCommand >= 0xf0) {
-			std::cerr << "Error: running status not permitted with meta and sysex"
+			*logDebug << "Error: running status not permitted with meta and sysex"
 			     << " event." << std::endl;
-			std::cerr << "Byte is 0x" << std::hex << (int)byte << std::dec << std::endl;
+			*logDebug << "Byte is 0x" << std::hex << (int)byte << std::dec << std::endl;
 			return 0;
 		}
 	} else {
@@ -2650,7 +2651,7 @@ int MidiFile::extractMidiData(std::istream& input, std::vector<uchar>& array,
 			byte = readByte(input);
 			if (!status()) { return m_rwstatus; }
 			if (byte > 0x7f) {
-				std::cerr << "MIDI data byte too large: " << (int)byte << std::endl;
+				*logDebug << "MIDI data byte too large: " << (int)byte << std::endl;
 				m_rwstatus = false; return m_rwstatus;
 			}
 			array.push_back(byte);
@@ -2658,7 +2659,7 @@ int MidiFile::extractMidiData(std::istream& input, std::vector<uchar>& array,
 				byte = readByte(input);
 				if (!status()) { return m_rwstatus; }
 				if (byte > 0x7f) {
-					std::cerr << "MIDI data byte too large: " << (int)byte << std::endl;
+					*logDebug << "MIDI data byte too large: " << (int)byte << std::endl;
 					m_rwstatus = false; return m_rwstatus;
 				}
 				array.push_back(byte);
@@ -2670,7 +2671,7 @@ int MidiFile::extractMidiData(std::istream& input, std::vector<uchar>& array,
 				byte = readByte(input);
 				if (!status()) { return m_rwstatus; }
 				if (byte > 0x7f) {
-					std::cerr << "MIDI data byte too large: " << (int)byte << std::endl;
+					*logDebug << "MIDI data byte too large: " << (int)byte << std::endl;
 					m_rwstatus = false; return m_rwstatus;
 				}
 				array.push_back(byte);
@@ -2706,7 +2707,7 @@ int MidiFile::extractMidiData(std::istream& input, std::vector<uchar>& array,
 								if (!status()) { return m_rwstatus; }
 								array.push_back(byte4);
 								if (byte4 >= 0x80) {
-									std::cerr << "Error: cannot handle large VLVs" << std::endl;
+									*logDebug << "Error: cannot handle large VLVs" << std::endl;
 									m_rwstatus = false; return m_rwstatus;
 								} else {
 									length = unpackVLV(byte1, byte2, byte3, byte4);
@@ -2810,7 +2811,7 @@ ulong MidiFile::unpackVLV(uchar a, uchar b, uchar c, uchar d, uchar e) {
 	}
 	count++;
 	if (count >= 6) {
-		std::cerr << "VLV number is too large" << std::endl;
+		*logDebug << "VLV number is too large" << std::endl;
 		m_rwstatus = false;
 		return 0;
 	}
@@ -2838,7 +2839,7 @@ void MidiFile::writeVLValue(long aValue, std::vector<uchar>& outdata) {
 	uchar bytes[4] = {0};
 
 	if ((unsigned long)aValue >= (1 << 28)) {
-		std::cerr << "Error: number too large to convert to VLV" << std::endl;
+		*logDebug << "Error: number too large to convert to VLV" << std::endl;
 		aValue = 0x0FFFffff;
 	}
 
@@ -2937,7 +2938,7 @@ ulong MidiFile::readLittleEndian4Bytes(std::istream& input) {
 	uchar buffer[4] = {0};
 	input.read((char*)buffer, 4);
 	if (input.eof()) {
-		std::cerr << "Error: unexpected end of file." << std::endl;
+		*logDebug << "Error: unexpected end of file." << std::endl;
 		return 0;
 	}
 	return buffer[3] | (buffer[2] << 8) | (buffer[1] << 16) | (buffer[0] << 24);
@@ -2956,7 +2957,7 @@ ushort MidiFile::readLittleEndian2Bytes(std::istream& input) {
 	uchar buffer[2] = {0};
 	input.read((char*)buffer, 2);
 	if (input.eof()) {
-		std::cerr << "Error: unexpected end of file." << std::endl;
+		*logDebug << "Error: unexpected end of file." << std::endl;
 		return 0;
 	}
 	return buffer[1] | (buffer[0] << 8);
@@ -2975,7 +2976,7 @@ uchar MidiFile::readByte(std::istream& input) {
 	uchar buffer[1] = {0};
 	input.read((char*)buffer, 1);
 	if (input.eof()) {
-		std::cerr << "Error: unexpected end of file." << std::endl;
+		*logDebug << "Error: unexpected end of file." << std::endl;
 		m_rwstatus = false;
 		return 0;
 	}
