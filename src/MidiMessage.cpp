@@ -187,6 +187,10 @@ int MidiMessage::resizeToCommand(void) {
 }
 
 
+void MidiMessage::makeTempo(double tempo) {
+    setTempo(tempo);
+};
+
 
 //////////////////////////////
 //

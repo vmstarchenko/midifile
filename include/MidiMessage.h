@@ -140,7 +140,7 @@ class MidiMessage : public std::vector<uchar> {
 		                                     int clocksPerClick = 24,
 		                                     int num32dsPerQuarter = 8);
 
-		void           makeTempo            (double tempo) { setTempo(tempo); }
+		void           makeTempo            (double tempo);
 		int            getTempoMicro        (void) const;
 		int            getTempoMicroseconds (void) const;
 		double         getTempoSeconds      (void) const;
